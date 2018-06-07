@@ -1,43 +1,6 @@
-<!-- TOC -->
-
-- [项目规范](#项目规范)
-  - [Laravel 版本选择](#laravel-版本选择)
-  - [开发和线上环境](#开发和线上环境)
-  - [配置信息与环境变量](#配置信息与环境变量)
-  - [辅助函数](#辅助函数)
-  - [缓存策略规范](#缓存策略规范)
-  - [项目文档编写规范](#项目文档编写规范)
-- [编码规范](#编码规范)
-  - [代码风格](#代码风格)
-  - [路由器](#路由器)
-    - [路由闭包](#路由闭包)
-    - [Restful 路由](#restful-路由)
-    - [resource 方法正确使用](#resource-方法正确使用)
-    - [单数 or 复数？](#单数-or-复数)
-  - [数据模型](#数据模型)
-    - [放置位置](#放置位置)
-    - [User.php](#userphp)
-    - [使用基类](#使用基类)
-    - [命名规范](#命名规范)
-  - [控制器](#控制器)
-    - [资源控制器](#资源控制器)
-    - [单数 or 复数？](#单数-or-复数-1)
-    - [保持短小精炼](#保持短小精炼)
-  - [表单验证](#表单验证)
-    - [表单请求验证类](#表单请求验证类)
-    - [验证类命名](#验证类命名)
-    - [类文件参考](#类文件参考)
-  - [Artisan 命令行](#artisan-命令行)
-  - [中间件](#中间件)
-- [安全](#安全)
-  - [关闭 DEBUG](#关闭-debug)
-  - [XSS](#xss)
-  - [SQL 注入](#sql-注入)
-  - [CSRF](#csrf)
-
-<!-- /TOC -->
-
 # 项目规范
+
+---
 
 ## Laravel 版本选择
 
@@ -48,6 +11,8 @@ composer create-project laravel/laravel project-name --prefer-dist "5.5.*"
 
 composer create-project laravel/lumen project-name --prefer-dist "5.5.*"
 ```
+
+---
 
 ## 开发和线上环境
 
@@ -63,9 +28,13 @@ composer create-project laravel/lumen project-name --prefer-dist "5.5.*"
 - `.env.test` 测试环境
 - `.env.prod` 正式生产环境
 
+---
+
 ## 配置信息与环境变量
 
 针对不同环境的公共配置信息，如Mysql，Redis，CDN等，应**存储在 .env 和 config/app.php 文件中，然后使用 config() 函数来读取。**
+
+---
 
 e.g.
 
@@ -79,6 +48,8 @@ DB_DATABASE=ieg_briefs
 DB_USERNAME=root
 DB_PASSWORD=
 ```
+
+---
 
 **config/database.php文件配置Mysql信息**
 
@@ -106,6 +77,8 @@ return [
 
 ```
 
+---
+
 ## 辅助函数
 
 必须 把所有的 **自定义辅助函数** 存放于 bootstrap 文件夹中。
@@ -120,7 +93,11 @@ require __DIR__ . '/helpers.php';
 ...
 ```
 
+---
+
 ## 缓存策略规范
+
+---
 
 **缓存驱动的选择需要与业务团队事先沟通清楚，究竟是使用Memcached，Redis，或者其他。**
 
@@ -145,9 +122,15 @@ require __DIR__ . '/helpers.php';
         ],
 ```
 
+---
+
 ## 项目文档编写规范
 
+---
+
 每一个项目都 **必须** 包含一个 `readme.md` 文件，readme 里书写这个项目的简单信息。作用主要有两个，一个是团队新成员可从此文件中快速获悉项目大致情况，另一个是部署项目时可以作为参考。
+
+---
 
 
 `readme.md` 文档 **应该** 包含以下内容：
@@ -168,22 +151,33 @@ require __DIR__ . '/helpers.php';
 
 -「队列列表」- 以表格形式罗列出项目所有队列接口，说明用途，指出调用场景。
 
+---
+
 
 
 # 编码规范
+
+---
 
 ## 代码风格
 
 代码风格 **必须** 严格遵循 [PSR-2](https://www.kancloud.cn/thinkphp/php-fig-psr/3141) 规范。
 
+---
 
 ## 路由器
 
+---
+
 ### 路由闭包
+
+---
 
 **绝不** 在路由配置文件里书写『闭包路由』或者其他业务逻辑代码，因为一旦使用将无法使用 [路由缓存](https://laravel-china.org/docs/laravel/5.5/controllers/1296#route-caching) 。
 
 路由器要保持干净整洁，**绝不** 放置除路由配置以外的其他程序逻辑。
+
+---
 
 ### Restful 路由
 
@@ -200,8 +194,9 @@ GET | /photos/{id} | show | photos.show
 PUT/PATCH | /photos/{id} | update | photos.update
 DELETE | /photos/{id} | destory | photos.destory
 
-
 **超出 Restful 路由的，应该 模仿上表的方式来定义路由。**
+
+---
 
 ### resource 方法正确使用
 
@@ -210,6 +205,8 @@ DELETE | /photos/{id} | destory | photos.destory
 ```php
 Route::resource('photos', 'PhotosController');
 ```
+
+---
 
 等于以下路由定义：
 
@@ -222,6 +219,8 @@ Route::put('/photos/{photo}', 'PhotosController@update')->name('photos.update');
 Route::delete('/photos/{photo}', 'PhotosController@destroy')->name('photos.destroy');
 ```
 
+---
+
 使用 `resource` 方法时，如果仅使用到部分路由，必须 使用 `only` 列出所有可用路由：
 
 ```php
@@ -229,6 +228,8 @@ Route::resource('photos', 'PhotosController', ['only' => ['index', 'show']]);
 ```
 
 **绝不** 使用 `except`，因为 `only` 相当于白名单，相对于 `except` 更加直观。路由使用白名单有利于养成『安全习惯』。
+
+---
 
 ### 单数 or 复数？
 
@@ -246,7 +247,11 @@ Route::resource('photos', 'PhotosController', ['only' => ['index', 'show']]);
 /photo/{photo}
 ```
 
+---
+
 ## 数据模型
+
+---
 
 ### 放置位置
 
@@ -257,6 +262,7 @@ Route::resource('photos', 'PhotosController', ['only' => ['index', 'show']]);
 ```
 namespace App\Models;
 ```
+---
 
 ### User.php
 
@@ -264,11 +270,14 @@ Laravel 5.1 默认安装会把 `User` 模型存放在 `app/User.php`，必须 �
 
 为了不破坏原有的逻辑点，必须 全局搜索 `App/User` 并替换为 `App/Models/User`。
 
+---
+
 
 ### 使用基类
 
 所有的 **Eloquent 数据模型** 都 必须 继承统一的基类 `App/Models/Model`，此基类存放位置为 `/app/Models/Model.php`，内容参考以下：
 
+---
 
 ```php
 <?php
@@ -285,6 +294,8 @@ class Model extends EloquentModel
     }
 }
 ```
+
+---
 
 以 Photo 数据模型作为例子继承 Model 基类：
 
@@ -304,6 +315,8 @@ class Photo extends Model
 }
 ```
 
+---
+
 ### 命名规范
 
 数据模型相关的命名规范：
@@ -317,6 +330,8 @@ class Photo extends Model
 - 数据库表主键 **必须** 为「id」
 - 数据库表外键 **必须** 为「resource_id」，如：user_id, post_id
 - 数据模型变量 **必须** 为「resource_id」，如：$user_id, $post_id
+
+---
 
 ## 控制器
 
