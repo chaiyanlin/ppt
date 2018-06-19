@@ -134,3 +134,143 @@ return [
     ]
 ```
 [详细说明](https://www.easyswoole.com/Manual/2.x/Cn/_book/Introduction/config.html)
+
+---
+
+## 服务管理脚本
+
+```
+使用:
+  easyswoole [操作] [选项]
+
+操作:
+  install       安装easySwoole
+  start         启动easySwoole
+  stop          停止easySwoole
+  reload        重启easySwoole
+  help          查看命令的帮助信息
+```
+
+---
+
+## Nginx反向代理配置
+
+访问：http://test.gzh.qq.com/moss-gateway/wechat/callback
+
+```
+location /moss-gateway/ {
+        rewrite /moss-gateway/(.*) /$1 break;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "keep-alive";
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_pass http://127.0.0.1:9501;
+    }
+```
+
+---
+
+## 连接池
+
+连接池不是跨进程的，也就是说一个进程有一个连接池，配置中的MAX为100，开了4个worker，最大连接数可能达到400。
+
+---
+
+## 数据库协程连接池
+
+```
+PoolManager::getInstance()->registerPool(MysqlPool2::class, 3, 10);
+$pool = PoolManager::getInstance()->getPool('App\Utility\MysqlPool');// 获取连接池对象
+$db = $pool->getObj();
+```
+
+---
+
+## 连接池基本方法
+
+**getObj 从连接池中取得对象：**
+
+```
+public function getObj($timeOut = 0.1) {}
+```
+
+**freeObj 释放对象：**
+```
+public function freeObj($obj) {}
+```
+
+---
+
+## 协程curl
+
+```
+function concurrent()
+    {
+        //以下流程网络IO的时间就接近于 MAX(q1网络IO时间, q2网络IO时间)。
+        $micro = microtime(true);
+        $q1 = new Http('http://127.0.0.1:9501/curl/sleep/index.html?time=1');
+        $c1 = $q1->exec(true);
+
+        $q2 = new Http('http://127.0.0.1:9501/curl/sleep/index.html?time=4');
+        $c2 = $q2->exec(true);
+
+        $c1->recv();
+        $c1->close();
+        $c2->recv();
+        $c2->close();
+
+        $time = round(microtime(true) - $micro,3);
+        $this->response()->write($time);
+
+    }
+```
+
+---
+
+## 异步worker
+
+> 直接投递闭包
+
+```
+function index()
+{
+    \EasySwoole\Core\Swoole\Task\TaskManager::async(function () {
+        echo "执行异步任务...\n";
+        return true;
+    }, function () {
+        echo "异步任务执行完毕...\n";
+    });
+}
+```
+
+--- 
+
+> 投递任务模板类
+
+```
+// 在控制器中投递的例子
+function index()
+{
+    // 实例化任务模板类 并将数据带进去 可以在任务类$taskData参数拿到数据
+      $taskClass = new Task('taskData');
+    \EasySwoole\Core\Swoole\Task\TaskManager::async($taskClass);
+}
+```
+
+`Task`类需要继承`AbstractAsyncTask`；
+
+---
+
+## 定时器
+
+```
+$register->add($register::onWorkerStart, function (\swoole_server $server, $workerId) {
+            //为第一个进程添加定时器
+            if ($workerId == 0) {
+                # 启动定时器
+                Timer::loop(10000, function () {
+                    Logger::getInstance()->console('timer run');  # 写日志到控制台
+                    ProcessManager::getInstance()->writeByProcessName('test', time());  # 向自定义进程发消息
+                });
+            }
+        });
+```
