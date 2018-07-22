@@ -8,7 +8,11 @@
 
 ## RPC（Remote Procedure Call）远程过程调用
 
+---
+
 ![](https://obrxbqjbi.qnssl.com/blog/image/rpc-architecture.jpg)
+
+---
 
 **它的主要流程是Client -> Client Stub -> Network -> Server Stub -> Server 执行完成之后再进行返回。**
 
