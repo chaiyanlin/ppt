@@ -80,7 +80,7 @@ $channel->basic_publish($msg, '', 'rpc_queue');
 
 ---
 
-![](https://imgcache-1251786003.image.myqcloud.com/media/gzhoss/image/20180722/af243910b11eb96741645b7c30154d7f.png)
+![](https://images2015.cnblogs.com/blog/832799/201612/832799-20161224004437839-1074972304.png)
 
 ---
 
@@ -99,10 +99,15 @@ $channel->basic_publish($msg, '', 'rpc_queue');
 ## 总结优势
 
 - RabbitMQ中间件本身统一了通信协议，解决不同技术栈之间的隔阂，网关与业务模块只需专注于消息队列通信即可；
+
+---
 - 网关侧：
     - 长连接池只需关注消息队列即可；
     - 与业务模块的通信只需区分queue即可；
     - 请求不需要做鉴权，只有合法服务才能接入消息队列；
+
+---
+
 - 业务侧：
     - RPCServer的开发按照消费者开发标准即可（e.g.一个Lumen服务，只需开发一个Artisan 命令，而后交由Supervisor维持即可）；
     - 处理微信消息业务服务，全部自动变成内存常驻形；
