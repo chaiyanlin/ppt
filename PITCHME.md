@@ -1,276 +1,103 @@
-## 环境要求
+## 微服务与RPC
 
-`swoole`是一个PHP 异步网络通信引擎，其核心就是PHP扩展`swoole.so`文件。
+**背景：AWP系统迁移摒弃单体式开发`Monolithic`，全面拥抱微服务架构体系。**
 
-- Swoole-2.x
-- PHP-7.1.x
-- 依赖hiredis库（如果需要async-redis特性）
+在微服务中，使用什么协议来构建服务体系，一直是个热门话题。 争论的焦点集中在两个候选技术：（Binary）RPC or Restful。
 
 ---
 
-## 编译安装
+## RPC（Remote Procedure Call）远程过程调用
 
-```
-wget https://github.com/swoole/swoole-src/archive/v2.2.0.zip
-unzip v2.2.0.zip
-cd swoole-src-2.2.0
-phpize
-./configure --enable-openssl --enable-async-redis --enable-timewheel --enable-mysqlnd --enable-coroutine
-```
+![](https://obrxbqjbi.qnssl.com/blog/image/rpc-architecture.jpg)
 
-> `php.ini`添加`extension=swoole.so`
+**它的主要流程是Client -> Client Stub -> Network -> Server Stub -> Server 执行完成之后再进行返回。**
+
+---
+
+## RPC vs Restful
+
+- 以Apache Thrift为代表的二进制RPC，支持多种语言（但不是所有语言），四层通讯协议，性能高，节省带宽。相对Restful协议，使用Thrift RPC，在同等硬件条件下，带宽使用率仅为前者的20%，性能却提升一个数量级。但是这种协议最大的问题在于，无法穿透防火墙。
+- 以Spring Cloud为代表所支持的Restful 协议，优势在于能够穿透防火墙，使用方便，语言无关，基本上可以使用各种开发语言实现的系统，都可以接受Restful 的请求。 但性能和带宽占用上有劣势。
+
+---
+
+## RPC vs Restful
+
+业内对微服务的实现，基本是确定一个组织边界，在该边界内，使用RPC; 边界外，使用Restful。这个边界，可以是业务、部门，甚至是全公司。
+
+---
+
+## 我们的现状
+
+- 为了让模块间通信更加松散，可扩展，使用了Restful；
+    - 网关以HTTP短连接方式分发微信请求到业务模块，qps单机不超过6k，且端口资源吃紧；
+- 如果使用对内使用RPC，维持通信长连接池：
+    - 一个简单的业务模块，为了RPC通信非要开发成RPCServer的形式，让人感到沮丧；
+    - 网关需要动态维持与不同业务RPCServer的长连接池；
+    - 模块间使用技术栈不同将增加RPC通信开发成本；
 
 ---
 
 
-## 原生HTTPServer
+## 微服务之间通过RabbitMQ通信
+
+RabbitMQ RPC
 
 ```php
-<?php
-$http = new swoole_http_server("10.222.147.99", 9501);
-$http->set([
-    'worker_num' => 100,
-]);
-$ch = curl_init();
-curl_setopt($ch,CURLOPT_URL,"http://apps.gzh.qq.com/");
-curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
-curl_setopt($ch,CURLOPT_HEADER,0);
-$http->on('request', function ($request, $response) use ($ch) {
-    //$response->end("<h1>Hello Swoole. #" . rand(1000, 9999) . "</h1>");
-    $output = curl_exec($ch);
-    //var_dump($output);
-});
-$http->start();
-```
-
----
-
-## EasySwoole
-
-EasySwoole 是一款基于Swoole Server 开发的常驻内存型的分布式PHP框架，专为API而生，摆脱传统PHP运行模式在进程唤起和文件加载上带来的性能损失。EasySwoole 高度封装了 Swoole Server 而依旧维持 Swoole Server 原有特性，支持同时混合监听HTTP、自定义TCP、UDP协议，让开发者以最低的学习成本和精力编写出多进程，可异步，高可用的应用服务
-
----
-
-## 优势
-
-- 简单易用开发效率高
-- 并发百万TCP连接
-- TCP/UDP/UnixSock
-- 支持异步/同步/协程
-- 支持多进程/多线程
-- CPU亲和性/守护进程
-
----
-
-## 常用功能与组件
-
-- HTTP控制器与自定义路由
-- TCP、UDP、WEB_SOCKET控制器
-- 多种混合协议通讯
-- 异步客户端与协程对象池
-- 异步进程、自定义进程、定时器
-- 集群分布式支持，例如集群节点通讯，服务发现，RPC
-- 全开放系统事件注册器与EventHook
-
----
-
-## 框架安装
-
-```
-# 创建项目
-composer create-project easyswoole/app easyswoole
-
-# 进入项目目录并启动
-cd easyswoole
-php easyswoole start
+$fibonacci_rpc = new FibonacciRpcClient();
+$response = $fibonacci_rpc->call(30);
+echo ' [.] Got ', $response, "\n";
 ```
 ---
 
-## 目录结构
-
-```
-project                   项目部署目录
-├─App                     应用目录(可以有多个)
-│  ├─HttpController       控制器目录
-│  │  └─Index.php         默认控制器
-│  └─Model                模型文件目录
-├─Log                     日志文件目录
-├─Temp                    临时文件目录
-├─vendor                  第三方类库目录
-├─composer.json           Composer架构
-├─composer.lock           Composer锁定
-├─Config.php              框架全局配置
-├─EasySwooleEvent.php     框架全局事件
-├─easyswoole              框架管理脚本
-├─easyswoole.install      框架安装锁定文件
-```
-
----
-
-## Config.php
+## RabbitMQ RPC
 
 ```php
-return [
-    'SERVER_NAME' => "EasySwoole",
-    'MAIN_SERVER' => [
-        'HOST' => '0.0.0.0',
-        'PORT' => 9501,
-        'SERVER_TYPE' => \EasySwoole\Core\Swoole\ServerManager::TYPE_WEB_SERVER,
-        'SOCK_TYPE' => SWOOLE_TCP, //该配置项当为SERVER_TYPE值为TYPE_SERVER时有效
-        'RUN_MODEL' => SWOOLE_PROCESS,
-        'SETTING' => [
-            'task_worker_num' => 8, //异步任务进程
-            'task_max_request' => 100,
-            'max_request' => 5000, //强烈建议设置此配置项
-            'worker_num' => 100,
-        ],
-    ],
-    'DEBUG' => true,
-    'TEMP_DIR' => null, //若不配置，则默认框架初始化
-    'LOG_DIR' => null, //若不配置，则默认框架初始化
-    'EASY_CACHE' => [
-        'PROCESS_NUM' => 1, //若不希望开启，则设置为0
-        'PERSISTENT_TIME' => 0, //如果需要定时数据落地，请设置对应的时间周期，单位为秒
-    ]
+list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
+$msg = new AMQPMessage(
+    $payload,
+    array('reply_to' => $queue_name)
+);
+$channel->basic_publish($msg, '', 'rpc_queue');
+# ... then code to read a response message from the callback_queue ...
 ```
-[详细说明](https://www.easyswoole.com/Manual/2.x/Cn/_book/Introduction/config.html)
+
+> Callback Queue(回调队列)
+
+**使用RabbitMQ实现RPC原理就是客户端发送请求消息，服务器接受并回复响应消息。为了能够接受到响应消息，在发送消息的时候需要提供一个回调队列。在发送消息时，往往使用reply_to属性来标识使用的回调队列。**
 
 ---
 
-## 服务管理脚本
+## correlation_id(关联标识)
 
-```
-使用:
-  easyswoole [操作] [选项]
-
-操作:
-  install       安装easySwoole
-  start         启动easySwoole
-  stop          停止easySwoole
-  reload        重启easySwoole
-  help          查看命令的帮助信息
-```
+之前的方法是给每个请求都创建一个回调队列，现实中请求数量往往较大，因此这种做法非常低效。另一个较好的方案是给每个客户端都只创建一个回调队列，使用`correlation_id`来标识收到的响应属于哪个请求，当我们从回调队列中接收到一个消息的时候，我们就可以查看这条属性从而将响应和请求匹配起来
 
 ---
 
-## Nginx反向代理配置
-
-访问：http://test.gzh.qq.com/moss-gateway/wechat/callback
-
-```
-location /moss-gateway/ {
-        rewrite /moss-gateway/(.*) /$1 break;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "keep-alive";
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_pass http://127.0.0.1:9501;
-    }
-```
+![](https://imgcache-1251786003.image.myqcloud.com/media/gzhoss/image/20180722/af243910b11eb96741645b7c30154d7f.png)
 
 ---
 
-## 连接池
+## rpc-client.php
 
-连接池不是跨进程的，也就是说一个进程有一个连接池，配置中的MAX为100，开了4个worker，最大连接数可能达到400。
-
----
-
-## 数据库协程连接池
-
-```
-PoolManager::getInstance()->registerPool(MysqlPool2::class, 3, 10);
-$pool = PoolManager::getInstance()->getPool('App\Utility\MysqlPool');// 获取连接池对象
-$db = $pool->getObj();
-```
+[代码示例](https://github.com/jakubkulhan/bunny/blob/master/tutorial/6-rpc/rpc_client.php)
 
 ---
 
-## 连接池基本方法
+## rpc-server.php
 
-**getObj 从连接池中取得对象：**
-
-```
-public function getObj($timeOut = 0.1) {}
-```
-
-**freeObj 释放对象：**
-```
-public function freeObj($obj) {}
-```
+[代码示例](https://github.com/jakubkulhan/bunny/blob/master/tutorial/6-rpc/rpc_server.php)
 
 ---
 
-## 协程curl
+## 总结优势
 
-```
-function concurrent()
-    {
-        //以下流程网络IO的时间就接近于 MAX(q1网络IO时间, q2网络IO时间)。
-        $micro = microtime(true);
-        $q1 = new Http('http://127.0.0.1:9501/curl/sleep/index.html?time=1');
-        $c1 = $q1->exec(true);
-
-        $q2 = new Http('http://127.0.0.1:9501/curl/sleep/index.html?time=4');
-        $c2 = $q2->exec(true);
-
-        $c1->recv();
-        $c1->close();
-        $c2->recv();
-        $c2->close();
-
-        $time = round(microtime(true) - $micro,3);
-        $this->response()->write($time);
-
-    }
-```
-
----
-
-## 异步worker
-
-> 直接投递闭包
-
-```
-function index()
-{
-    \EasySwoole\Core\Swoole\Task\TaskManager::async(function () {
-        echo "执行异步任务...\n";
-        return true;
-    }, function () {
-        echo "异步任务执行完毕...\n";
-    });
-}
-```
-
---- 
-
-> 投递任务模板类
-
-```
-// 在控制器中投递的例子
-function index()
-{
-    // 实例化任务模板类 并将数据带进去 可以在任务类$taskData参数拿到数据
-      $taskClass = new Task('taskData');
-    \EasySwoole\Core\Swoole\Task\TaskManager::async($taskClass);
-}
-```
-
-`Task`类需要继承`AbstractAsyncTask`；
-
----
-
-## 定时器
-
-```
-$register->add($register::onWorkerStart, function (\swoole_server $server, $workerId) {
-            //为第一个进程添加定时器
-            if ($workerId == 0) {
-                # 启动定时器
-                Timer::loop(10000, function () {
-                    Logger::getInstance()->console('timer run');  # 写日志到控制台
-                    ProcessManager::getInstance()->writeByProcessName('test', time());  # 向自定义进程发消息
-                });
-            }
-        });
-```
+- RabbitMQ中间件本身统一了通信协议，解决不同技术栈之间的隔阂，网关与业务模块只需专注于消息队列通信即可；
+- 网关侧：
+    - 长连接池只需关注消息队列即可；
+    - 与业务模块的通信只需区分queue即可；
+    - 请求不需要做鉴权，只有合法服务才能接入消息队列；
+- 业务侧：
+    - RPCServer的开发按照消费者开发标准即可（e.g.一个Lumen服务，只需开发一个Artisan 命令，而后交由Supervisor维持即可）；
+    - 处理微信消息业务服务，全部自动变成内存常驻形；
+    - 纵向扩展即可增加业务处理能力；
