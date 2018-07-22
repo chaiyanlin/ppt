@@ -56,6 +56,12 @@ echo ' [.] Got ', $response, "\n";
 
 ## RabbitMQ RPC
 
+> Callback Queue(回调队列)
+
+**使用RabbitMQ实现RPC原理就是客户端发送请求消息，服务器接受并回复响应消息。为了能够接受到响应消息，在发送消息的时候需要提供一个回调队列。在发送消息时，往往使用reply_to属性来标识使用的回调队列。**
+
+---
+
 ```php
 list($queue_name, ,) = $channel->queue_declare("", false, false, true, false);
 $msg = new AMQPMessage(
@@ -65,10 +71,6 @@ $msg = new AMQPMessage(
 $channel->basic_publish($msg, '', 'rpc_queue');
 # ... then code to read a response message from the callback_queue ...
 ```
-
-> Callback Queue(回调队列)
-
-**使用RabbitMQ实现RPC原理就是客户端发送请求消息，服务器接受并回复响应消息。为了能够接受到响应消息，在发送消息的时候需要提供一个回调队列。在发送消息时，往往使用reply_to属性来标识使用的回调队列。**
 
 ---
 
