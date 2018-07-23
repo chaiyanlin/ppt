@@ -60,7 +60,7 @@ echo ' [.] Got ', $response, "\n";
 
 ---
 
-![](https://images2015.cnblogs.com/blog/832799/201612/832799-20161224004437839-1074972304.png)
+![](https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=183207246,1405132495&fm=27&gp=0.jpg)
 
 ---
 
@@ -99,7 +99,7 @@ $channel->basic_publish($msg, '', 'rpc_queue');
 
 ---
 
-![](https://images2015.cnblogs.com/blog/832799/201612/832799-20161224004437839-1074972304.png)
+![](https://ss1.bdstatic.com/70cFvXSh_Q1YnxGkpoWK1HF6hhy/it/u=183207246,1405132495&fm=27&gp=0.jpg)
 
 ---
 
