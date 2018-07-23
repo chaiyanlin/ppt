@@ -8,6 +8,8 @@
 
 ## RPC（Remote Procedure Call）远程过程调用
 
+**两台服务器A，B，一个应用部署在A服务器上，想要调用B服务器上应用提供的函数/方法，由于不在一个内存空间，不能直接调用，需要通过网络来表达调用的语义和传达调用的数据。**
+
 ---
 
 ![](https://obrxbqjbi.qnssl.com/blog/image/rpc-architecture.jpg)
@@ -20,8 +22,8 @@
 
 ## RPC vs Restful
 
-- 以Apache Thrift为代表的二进制RPC，支持多种语言（但不是所有语言），四层通讯协议，性能高，节省带宽。相对Restful协议，使用Thrift RPC，在同等硬件条件下，带宽使用率仅为前者的20%，性能却提升一个数量级。但是这种协议最大的问题在于，无法穿透防火墙。
-- 以Spring Cloud为代表所支持的Restful 协议，优势在于能够穿透防火墙，使用方便，语言无关，基本上可以使用各种开发语言实现的系统，都可以接受Restful 的请求。 但性能和带宽占用上有劣势。
+- 以Apache Thrift为代表的二进制RPC，支持多种语言（但不是所有语言），四层通讯协议，**性能高**，**节省带宽**。相对Restful协议，使用Thrift RPC，在同等硬件条件下，带宽使用率仅为前者的20%，性能却提升一个数量级。但是这种协议最大的问题在于，**无法穿透防火墙**。
+- 以Spring Cloud为代表所支持的Restful 协议，优势在于**能够穿透防火墙**，**使用方便**，**语言无关**，基本上可以使用**各种开发语言实现**的系统，都可以接受Restful 的请求。 但**性能和带宽占用上有劣势**。
 
 ---
 
@@ -52,6 +54,23 @@ $fibonacci_rpc = new FibonacciRpcClient();
 $response = $fibonacci_rpc->call(30);
 echo ' [.] Got ', $response, "\n";
 ```
+---
+
+![](https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1532368354101&di=97b49ee7a86bd10da68959bc0f61e992&imgtype=0&src=http%3A%2F%2Fimg.it610.com%2Fimage%2Finfo2%2Ffab754b4e27044e280efec17b7870eb3.jpg)
+
+---
+
+![](https://images2015.cnblogs.com/blog/832799/201612/832799-20161224004437839-1074972304.png)
+
+---
+
+消息属性(Message properties)
+
+- 分发模式(deliveryMode): 标记一个消息是否需要持久化(persistent)或者是需要事务(transient)等
+- 消息体类型(contentType): 描述消息中传递具体内容的编码方式，比如我们经常使用的JSON可以设置成:application/json
+- 消息回应(replyTo): 回调队列
+- 关联标识(correlationId): 用于将RPC的返回值关联到对应的请求
+
 ---
 
 ## RabbitMQ RPC
