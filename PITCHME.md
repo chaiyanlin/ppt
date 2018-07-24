@@ -115,6 +115,17 @@ $channel->basic_publish($msg, '', 'rpc_queue');
 
 ---
 
+**归纳：**
+
+- Server创建rpc_queue消息队列，并创建consumer处理rpc_queue的消息，也就是RPC请求的消息;
+- Client发送RPC请求消息到rpc_queue;
+- Server收到rpc_queue的消息，并执行并处理RPC，得到结果;
+- Server将结果发送到Client的消息队列;
+- Server发送ACK消息，标志一个RPC请求处理完成;
+- Client通过`correlation_id`确定收到对应的应答后，发送ACK，标记接受到RPC的响应；
+
+---
+
 ## 总结优势
 
 - RabbitMQ中间件本身统一了通信协议，解决不同技术栈之间的隔阂，网关与业务模块只需专注与消息队列通信即可；
