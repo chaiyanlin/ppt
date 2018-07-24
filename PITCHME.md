@@ -126,12 +126,12 @@ $channel->basic_publish($msg, '', 'rpc_queue');
 
 ---
 
-### 异常情况：
-RPC Server处理RPC请求过程中异常退出，导致没有回复RPC结果，RPC Client也不知道，一直在等待结果
+- 异常情况：
+    - RPC Server处理RPC请求过程中异常退出，导致没有回复RPC结果，RPC Client也不知道，一直在等待结果
 
-### 业务背景：
-- 微信服务`timeout`为5s；
-- 如果超时，不存在重试场景；
+- 业务背景：
+    - 微信服务`timeout`为5s；
+    - 如果超时，不存在重试场景；
 
 ---
 
